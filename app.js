@@ -26,15 +26,30 @@ const LIFE_THEMES = [
   '家庭日常与生活琐事的表达',
 ];
 
-const MODELS = [
-  { id: 'claude-opus-5-5', label: 'Opus 5.5（最准，推荐）' },
-  { id: 'claude-sonnet-5-5', label: 'Sonnet 5.5（较快，便宜些）' },
-  { id: 'claude-haiku-4-5', label: 'Haiku 4.5（最快最便宜）' },
-];
+const PROVIDERS = {
+  anthropic: {
+    label: 'Anthropic（Claude，质量最好）',
+    defaultModel: 'claude-opus-5-5',
+    models: [
+      { id: 'claude-opus-5-5', label: 'Opus 5.5（最准，推荐）' },
+      { id: 'claude-sonnet-5-5', label: 'Sonnet 5.5（较快）' },
+      { id: 'claude-haiku-4-5', label: 'Haiku 4.5（最快最便宜）' },
+    ],
+  },
+  deepseek: {
+    label: 'DeepSeek（国内·便宜）',
+    defaultModel: 'deepseek-chat',
+    models: [
+      { id: 'deepseek-chat', label: 'DeepSeek-V3（快，推荐）' },
+      { id: 'deepseek-reasoner', label: 'DeepSeek-R1（推理，较慢）' },
+    ],
+  },
+};
 
 const DEFAULT_STATE = {
   settings: {
     apiKey: '',
+    provider: 'anthropic', // anthropic | deepseek
     model: 'claude-opus-5-5',
     contentMode: 'alternate', // alternate | work | life
     reminders: { writing: '09:00', listening: '13:00', shadowing: '21:00' },
@@ -114,10 +129,17 @@ function biliSearchUrl(kw) {
 async function callClaudeRaw(system, user, maxTokens) {
   const key = (state.settings.apiKey || '').trim();
   if (!key) throw new Error('还没有 API key，请先到「设置」里填入');
+  const provider = state.settings.provider || 'anthropic';
+  const mt = maxTokens || 5000;
+  return provider === 'deepseek'
+    ? callDeepSeek(system, user, mt, key)
+    : callAnthropic(system, user, mt, key);
+}
 
+async function callAnthropic(system, user, maxTokens, key) {
   const body = {
     model: state.settings.model || 'claude-opus-5-5',
-    max_tokens: maxTokens || 5000,
+    max_tokens: maxTokens,
     messages: [{ role: 'user', content: user }],
   };
   if (system) body.system = system;
@@ -139,10 +161,33 @@ async function callClaudeRaw(system, user, maxTokens) {
     throw new Error(msg);
   }
   const data = await res.json();
-  const text = (data.content || [])
-    .filter(b => b.type === 'text')
-    .map(b => b.text)
-    .join('');
+  const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+  if (!text) throw new Error('AI 返回为空');
+  return text;
+}
+
+async function callDeepSeek(system, user, maxTokens, key) {
+  const messages = [];
+  if (system) messages.push({ role: 'system', content: system });
+  messages.push({ role: 'user', content: user });
+
+  const model = state.settings.model || 'deepseek-chat';
+  const body = { model, messages, max_tokens: maxTokens };
+  if (model === 'deepseek-chat') body.response_format = { type: 'json_object' };
+
+  const res = await fetch('https://api.deepseek.com/chat/completions', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'authorization': 'Bearer ' + key },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    let msg = 'HTTP ' + res.status;
+    try { msg += '：' + (await res.text()).slice(0, 300); } catch (e) {}
+    throw new Error(msg);
+  }
+  const data = await res.json();
+  const text = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
   if (!text) throw new Error('AI 返回为空');
   return text;
 }
@@ -368,6 +413,7 @@ function markShadowingDone() {
 function updateSettings() {
   const key = document.getElementById('setApiKey').value;
   state.settings.apiKey = key;
+  state.settings.provider = document.getElementById('setProvider').value;
   state.settings.model = document.getElementById('setModel').value;
   state.settings.contentMode = document.getElementById('setContentMode').value;
   state.settings.reminders.writing = document.getElementById('setRemindWriting').value;
@@ -375,6 +421,15 @@ function updateSettings() {
   state.settings.reminders.shadowing = document.getElementById('setRemindShadowing').value;
   state.settings.jobContext = document.getElementById('setJobContext').value;
   saveState();
+}
+function changeProvider() {
+  const p = document.getElementById('setProvider').value;
+  if (p !== state.settings.provider) {
+    state.settings.provider = p;
+    state.settings.model = PROVIDERS[p].defaultModel;
+    saveState();
+    render();
+  }
 }
 function toggleKeyVisibility() {
   const el = document.getElementById('setApiKey');
@@ -665,14 +720,19 @@ function renderSettings() {
 
     <label>Anthropic API key（内置 AI 需要）</label>
     <div style="display:flex;gap:8px">
-      <input type="password" id="setApiKey" value="${esc(s.apiKey)}" placeholder="sk-ant-…" oninput="updateSettings()">
+      <input type="password" id="setApiKey" value="${esc(s.apiKey)}" placeholder="sk-…" oninput="updateSettings()">
       <button class="btn btn-ghost" onclick="toggleKeyVisibility()" style="flex-shrink:0">👁</button>
     </div>
     <div class="sub" style="margin-top:6px">key 只保存在你手机本地，不会上传。获取方法见 README。</div>
 
+    <label>AI 服务商</label>
+    <select id="setProvider" onchange="changeProvider()">
+      ${Object.keys(PROVIDERS).map(k => `<option value="${k}" ${s.provider === k ? 'selected' : ''}>${PROVIDERS[k].label}</option>`).join('')}
+    </select>
+
     <label>AI 模型</label>
     <select id="setModel" onchange="updateSettings()">
-      ${MODELS.map(m => `<option value="${m.id}" ${s.model === m.id ? 'selected' : ''}>${m.label}</option>`).join('')}
+      ${(PROVIDERS[s.provider] || PROVIDERS.anthropic).models.map(m => `<option value="${m.id}" ${s.model === m.id ? 'selected' : ''}>${m.label}</option>`).join('')}
     </select>
 
     <label>内容节奏</label>

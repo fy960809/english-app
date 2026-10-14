@@ -10,12 +10,21 @@
 
 ---
 
-## 一、获取 Anthropic API key（内置 AI 需要，免费）
+## 一、获取 AI 的 API key（内置 AI 需要）
+
+应用支持两种 AI 服务商，在「设置 → AI 服务商」里切换。**国内用户推荐 DeepSeek**（注册方便、微信/支付宝充值、便宜）。
+
+### 方式 1：DeepSeek（推荐，国内）
+
+1. 打开 https://platform.deepseek.com/ ，用手机号注册登录。
+2. 左侧 **API keys → 创建 API key**，复制 `sk-...` 开头的 key。
+3. 打开应用 →「设置」→ AI 服务商选 **DeepSeek** → 粘贴 key。
+
+### 方式 2：Anthropic（Claude，质量最好，需能访问海外）
 
 1. 打开 https://console.anthropic.com/ ，注册/登录。
-2. 左侧菜单进入 **API Keys** → 点 **Create Key**，起个名字（比如 `english-app`）。
-3. 复制生成的 `sk-ant-...` 开头的 key（只显示一次，注意保存）。
-4. 打开应用 →「设置」→ 粘贴到 **API key** 一栏即可。
+2. 左侧 **API Keys → Create Key**，复制 `sk-ant-...` 开头的 key。
+3. 打开应用 →「设置」→ AI 服务商选 **Anthropic** → 粘贴 key。
 
 > key 只保存在你自己的手机本地，不会上传到任何服务器。放心。
 
@@ -52,5 +61,5 @@
 ## 五、常见问题
 
 - **AI 检查/生成报错**：先确认「设置」里 key 已填、没填错；再确认手机能联网。
-- **想换成别的模型**：设置 → AI 模型，可选 Opus / Sonnet / Haiku（Haiku 最快最便宜）。
+- **想换成别的服务商/模型**：设置 → AI 服务商（Anthropic / DeepSeek）→ AI 模型。
 - **换手机或清缓存会丢记录**：数据存在手机浏览器本地，卸载/清缓存会清空，重要记录建议偶尔备份。
