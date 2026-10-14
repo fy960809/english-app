@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0ea5e9">
+  <title>工程英语训练</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-title">工程英语训练</div>
+    <div class="header-date" id="headerDate"></div>
+  </header>
+
+  <div id="reminderBanner" class="reminder-banner hidden"></div>
+
+  <main id="main" class="main">
+    <section id="tab-today" class="tab"></section>
+    <section id="tab-writing" class="tab hidden"></section>
+    <section id="tab-listening" class="tab hidden"></section>
+    <section id="tab-shadowing" class="tab hidden"></section>
+    <section id="tab-settings" class="tab hidden"></section>
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-tab="today"><span class="nav-ico">📅</span><span>今日</span></button>
+    <button class="nav-btn" data-tab="writing"><span class="nav-ico">✍️</span><span>造句</span></button>
+    <button class="nav-btn" data-tab="listening"><span class="nav-ico">🎧</span><span>听力</span></button>
+    <button class="nav-btn" data-tab="shadowing"><span class="nav-ico">🗣️</span><span>跟读</span></button>
+    <button class="nav-btn" data-tab="settings"><span class="nav-ico">⚙️</span><span>设置</span></button>
+  </nav>
+
+  <script src="app.js"></script>
+</body>
+</html>
